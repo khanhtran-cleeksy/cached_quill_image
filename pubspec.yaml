@@ -9,8 +9,6 @@ dependencies:
     sdk: flutter
   flutter_cache_manager: ^3.3.0
   octo_image: ^1.0.0
-  cached_file_image_platform_interface: 
-    path: ../cached_file_image_platform_interface
   
 
 

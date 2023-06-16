@@ -37,7 +37,7 @@ typedef LoadingErrorWidgetBuilder = Widget Function(
 );
 
 /// Image widget to show NetworkImage with caching functionality.
-class CachedNetworkImage extends StatelessWidget {
+class CachedFileImage extends StatelessWidget {
   /// Get the current log level of the cache manager.
   static CacheManagerLogLevel get logLevel => CacheManager.logLevel;
 
@@ -198,7 +198,7 @@ class CachedNetworkImage extends StatelessWidget {
   /// provides support for a placeholder, showing an error and fading into the
   /// loaded image. Next to that it supports most features of a default Image
   /// widget.
-  CachedNetworkImage({
+  CachedFileImage({
     Key? key,
     required this.imageUrl,
     this.imageBuilder,

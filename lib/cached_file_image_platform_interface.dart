@@ -1,10 +1,7 @@
-library cached_network_image_platform_interface;
-
 import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// ImageLoader class to load images differently on various platforms.
 class ImageLoader {

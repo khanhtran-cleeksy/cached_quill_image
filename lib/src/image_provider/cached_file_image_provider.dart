@@ -8,13 +8,12 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'cached_file_image_provider.dart' as image_provider;
 import 'multi_image_stream_completer.dart';
 
-import '../../../cached_file_image_platform_interface.dart'
-    if (dart.library.io) '_image_loader.dart';
+import './_image_loader.dart' show ImageLoader;
 
 /// Function which is called after loading the image failed.
 typedef ErrorListener = void Function();
 
-/// IO implementation of the CachedNetworkImageProvider; the ImageProvider to
+/// IO implementation of the CachedFileImageProvider; the ImageProvider to
 /// load network images using a cache.
 class CachedFileImageProvider
     extends ImageProvider<image_provider.CachedFileImageProvider> {
@@ -29,7 +28,7 @@ class CachedFileImageProvider
     this.cacheKey,
   });
 
-  /// File url of the image to load
+  /// Web url of the image to load
   final String url;
 
   /// Cache key of the image to cache
@@ -59,8 +58,10 @@ class CachedFileImageProvider
   @override
   ImageStreamCompleter load(
       image_provider.CachedFileImageProvider key, DecoderCallback decode) {
+    final chunkEvents = StreamController<ImageChunkEvent>();
     return MultiImageStreamCompleter(
-      codec: _loadAsync(key, decode),
+      codec: _loadAsync(key, chunkEvents, decode),
+      chunkEvents: chunkEvents.stream,
       scale: key.scale,
       informationCollector: () sync* {
         yield DiagnosticsProperty<ImageProvider>(
@@ -76,11 +77,14 @@ class CachedFileImageProvider
       '_loadAsync is deprecated, use loadBuffer instead, see https://docs.flutter.dev/release/breaking-changes/image-provider-load-buffer')
   Stream<ui.Codec> _loadAsync(
     image_provider.CachedFileImageProvider key,
+    StreamController<ImageChunkEvent> chunkEvents,
     DecoderCallback decode,
   ) {
     assert(key == this);
     return ImageLoader().loadAsync(
       url,
+      cacheKey,
+      chunkEvents,
       decode,
       maxHeight,
       maxWidth,
@@ -115,6 +119,8 @@ class CachedFileImageProvider
     assert(key == this);
     return ImageLoader().loadBufferAsync(
       url,
+      cacheKey,
+      chunkEvents,
       decode,
       maxHeight,
       maxWidth,

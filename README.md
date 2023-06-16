@@ -21,7 +21,7 @@ A flutter library to show images from the internet and keep them in the cache di
 
 ## How to use
 The CachedNetworkImage can be used directly or through the ImageProvider.
-Both the CachedNetworkImage as CachedNetworkImageProvider have minimal support for web. It currently doesn't include caching.
+Both the CachedNetworkImage as CachedFileImageProvider have minimal support for web. It currently doesn't include caching.
 
 With a placeholder:
 ```dart
@@ -44,7 +44,7 @@ CachedNetworkImage(
 
 
 ````dart
-Image(image: CachedNetworkImageProvider(url))
+Image(image: CachedFileImageProvider(url))
 ````
 
 When you want to have both the placeholder functionality and want to get the imageprovider to use in another widget you can provide an imageBuilder:

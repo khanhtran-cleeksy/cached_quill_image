@@ -15,6 +15,8 @@ class ImageLoader implements platform.ImageLoader {
   @override
   Stream<ui.Codec> loadAsync(
     String url,
+    String? cacheKey,
+    StreamController<ImageChunkEvent> chunkEvents,
     DecoderCallback decode,
     int? maxHeight,
     int? maxWidth,
@@ -23,6 +25,8 @@ class ImageLoader implements platform.ImageLoader {
   ) {
     return _load(
       url,
+      cacheKey,
+      chunkEvents,
       decode,
       maxHeight,
       maxWidth,
@@ -34,6 +38,8 @@ class ImageLoader implements platform.ImageLoader {
   @override
   Stream<ui.Codec> loadBufferAsync(
       String url,
+      String? cacheKey,
+      StreamController<ImageChunkEvent> chunkEvents,
       DecoderBufferCallback decode,
       int? maxHeight,
       int? maxWidth,
@@ -41,6 +47,8 @@ class ImageLoader implements platform.ImageLoader {
       Function() evictImage) {
     return _load(
       url,
+      cacheKey,
+      chunkEvents,
       (bytes) async {
         final buffer = await ImmutableBuffer.fromUint8List(bytes);
         return decode(buffer);
@@ -54,6 +62,8 @@ class ImageLoader implements platform.ImageLoader {
 
   Stream<ui.Codec> _load(
     String url,
+    String? cacheKey,
+    StreamController<ImageChunkEvent> chunkEvents,
     _FileDecoderCallback decode,
     int? maxHeight,
     int? maxWidth,
@@ -73,7 +83,10 @@ class ImageLoader implements platform.ImageLoader {
       } else {
         bytes = await fileInfo.file.readAsBytes();
       }
-
+      chunkEvents.add(ImageChunkEvent(
+        cumulativeBytesLoaded: bytes.lengthInBytes,
+        expectedTotalBytes: bytes.lengthInBytes,
+      ));
       var decoded = await decode(bytes);
       yield decoded;
     } catch (e) {
@@ -86,6 +99,8 @@ class ImageLoader implements platform.ImageLoader {
 
       errorListener?.call();
       rethrow;
+    } finally {
+      await chunkEvents.close();
     }
   }
 }

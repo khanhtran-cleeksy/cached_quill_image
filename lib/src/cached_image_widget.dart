@@ -1,9 +1,9 @@
-
-import 'package:cached_file_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:octo_image/octo_image.dart';
+
+import '../cached_network_image.dart';
 
 /// Builder function to create an image widget. The function is called after
 /// the ImageProvider completes the image loading.
@@ -37,7 +37,7 @@ typedef LoadingErrorWidgetBuilder = Widget Function(
 );
 
 /// Image widget to show NetworkImage with caching functionality.
-class CachedFileImage extends StatelessWidget {
+class CachedNetworkImage extends StatelessWidget {
   /// Get the current log level of the cache manager.
   static CacheManagerLogLevel get logLevel => CacheManager.logLevel;
 
@@ -52,14 +52,18 @@ class CachedFileImage extends StatelessWidget {
   static Future evictFromCache(
     String url, {
     String? cacheKey,
+    BaseCacheManager? cacheManager,
     double scale = 1.0,
   }) async {
-    final cacheManager = DefaultCacheManager();
+    cacheManager = cacheManager ?? DefaultCacheManager();
     await cacheManager.removeFile(cacheKey ?? url);
     return CachedFileImageProvider(url, scale: scale).evict();
   }
 
   final CachedFileImageProvider _image;
+
+  /// Option to use cachemanager with other settings
+  final BaseCacheManager? cacheManager;
 
   /// The target image that is displayed.
   final String imageUrl;
@@ -194,7 +198,7 @@ class CachedFileImage extends StatelessWidget {
   /// provides support for a placeholder, showing an error and fading into the
   /// loaded image. Next to that it supports most features of a default Image
   /// widget.
-  CachedFileImage({
+  CachedNetworkImage({
     Key? key,
     required this.imageUrl,
     this.imageBuilder,
@@ -211,6 +215,7 @@ class CachedFileImage extends StatelessWidget {
     this.alignment = Alignment.center,
     this.repeat = ImageRepeat.noRepeat,
     this.matchTextDirection = false,
+    this.cacheManager,
     this.color,
     this.filterQuality = FilterQuality.low,
     this.colorBlendMode,
@@ -263,6 +268,7 @@ class CachedFileImage extends StatelessWidget {
       filterQuality: filterQuality,
       colorBlendMode: colorBlendMode,
       placeholderFadeInDuration: placeholderFadeInDuration,
+      gaplessPlayback: true,
       memCacheWidth: memCacheWidth,
       memCacheHeight: memCacheHeight,
     );

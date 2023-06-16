@@ -81,7 +81,7 @@ CachedNetworkImage(
 * Fix ImageProvider not using provided headers.
 
 ## [2.2.0] - 2020-04-30
-* Upgrades on CachedNetworkImageProvider:
+* Upgrades on CachedFileImageProvider:
     * Support for download progress.
     * Basic web support (no caching).
 

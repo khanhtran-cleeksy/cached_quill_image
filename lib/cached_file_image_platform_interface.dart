@@ -1,4 +1,4 @@
-library cached_file_image_platform_interface;
+library cached_network_image_platform_interface;
 
 import 'dart:async';
 import 'dart:ui' as ui;
@@ -13,6 +13,8 @@ class ImageLoader {
   @Deprecated('use loadBufferAsync instead')
   Stream<ui.Codec> loadAsync(
     String url,
+    String? cacheKey,
+    StreamController<ImageChunkEvent> chunkEvents,
     DecoderCallback decode,
     int? maxHeight,
     int? maxWidth,
@@ -26,6 +28,8 @@ class ImageLoader {
   /// Stream gives the option to show multiple images after each other.
   Stream<ui.Codec> loadBufferAsync(
     String url,
+    String? cacheKey,
+    StreamController<ImageChunkEvent> chunkEvents,
     DecoderBufferCallback decode,
     int? maxHeight,
     int? maxWidth,

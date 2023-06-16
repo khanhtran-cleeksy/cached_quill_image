@@ -32,12 +32,6 @@
       "languageVersion": "2.17"
     },
     {
-      "name": "cached_file_image_platform_interface",
-      "rootUri": "../../cached_file_image_platform_interface",
-      "packageUri": "lib/",
-      "languageVersion": "2.18"
-    },
-    {
       "name": "characters",
       "rootUri": "file:///C:/Users/sang.pham/AppData/Local/Pub/Cache/hosted/pub.dev/characters-1.2.1",
       "packageUri": "lib/",
@@ -482,7 +476,7 @@
       "languageVersion": "2.18"
     }
   ],
-  "generated": "2023-06-15T09:37:41.367526Z",
+  "generated": "2023-06-15T09:49:38.250071Z",
   "generator": "pub",
   "generatorVersion": "2.19.6"
 }

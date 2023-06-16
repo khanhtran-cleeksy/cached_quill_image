@@ -4,10 +4,11 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
+import 'package:cached_quill_image/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-import '../../../cached_file_image_platform_interface.dart' as platform show ImageLoader;
+import '../../icached_quill_image.dart' as platform show ImageLoader;
 
 /// ImageLoader class to load images on IO platforms.
 class ImageLoader implements platform.ImageLoader {
@@ -72,23 +73,46 @@ class ImageLoader implements platform.ImageLoader {
   ) async* {
     try {
       var cacheManager = DefaultCacheManager();
-      FileInfo? fileInfo;
+      if (isFromServer(url)) {
+        final stream = cacheManager.getFileStream(
+          url,
+          withProgress: true,
+          key: cacheKey,
+        );
 
-      fileInfo = await cacheManager.getFileFromCache(url);
-      Uint8List? bytes;
-
-      if (fileInfo == null) {
-        bytes = await File(url).readAsBytes();
-        await cacheManager.putFile(url, bytes);
+        await for (var result in stream) {
+          if (result is DownloadProgress) {
+            chunkEvents.add(ImageChunkEvent(
+              cumulativeBytesLoaded: result.downloaded,
+              expectedTotalBytes: result.totalSize,
+            ));
+          }
+          if (result is FileInfo) {
+            var file = result.file;
+            var bytes = await file.readAsBytes();
+            var decoded = await decode(bytes);
+            yield decoded;
+          }
+        }
       } else {
-        bytes = await fileInfo.file.readAsBytes();
+        FileInfo? fileInfo;
+
+        fileInfo = await cacheManager.getFileFromCache(url);
+        Uint8List? bytes;
+
+        if (fileInfo == null) {
+          bytes = await File(url).readAsBytes();
+          await cacheManager.putFile(url, bytes);
+        } else {
+          bytes = await fileInfo.file.readAsBytes();
+        }
+        chunkEvents.add(ImageChunkEvent(
+          cumulativeBytesLoaded: bytes.lengthInBytes,
+          expectedTotalBytes: bytes.lengthInBytes,
+        ));
+        var decoded = await decode(bytes);
+        yield decoded;
       }
-      chunkEvents.add(ImageChunkEvent(
-        cumulativeBytesLoaded: bytes.lengthInBytes,
-        expectedTotalBytes: bytes.lengthInBytes,
-      ));
-      var decoded = await decode(bytes);
-      yield decoded;
     } catch (e) {
       // Depending on where the exception was thrown, the image cache may not
       // have had a chance to track the key in the cache at all.

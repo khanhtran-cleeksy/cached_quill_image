@@ -1,8 +1,7 @@
-name: cached_file_image
-description: Flutter library to load and cache network images.
+name: cached_quill_image
+description: Flutter library to load and cache network or local images.
   Can also be used with placeholder and error widgets.
-homepage: https://github.com/Baseflow/flutter_cached_network_image
-version: 3.2.3
+version: 0.0.1
 
 dependencies:
   flutter:

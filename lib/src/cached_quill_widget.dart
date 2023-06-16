@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:octo_image/octo_image.dart';
 
-import '../cached_network_image.dart';
+import '../cached_quill_image.dart';
 
 /// Builder function to create an image widget. The function is called after
 /// the ImageProvider completes the image loading.
@@ -37,7 +37,7 @@ typedef LoadingErrorWidgetBuilder = Widget Function(
 );
 
 /// Image widget to show NetworkImage with caching functionality.
-class CachedFileImage extends StatelessWidget {
+class CachedQuillImage extends StatelessWidget {
   /// Get the current log level of the cache manager.
   static CacheManagerLogLevel get logLevel => CacheManager.logLevel;
 
@@ -57,10 +57,10 @@ class CachedFileImage extends StatelessWidget {
   }) async {
     cacheManager = cacheManager ?? DefaultCacheManager();
     await cacheManager.removeFile(cacheKey ?? url);
-    return CachedFileImageProvider(url, scale: scale).evict();
+    return CachedQuillImageProvider(url, scale: scale).evict();
   }
 
-  final CachedFileImageProvider _image;
+  final CachedQuillImageProvider _image;
 
   /// Option to use cachemanager with other settings
   final BaseCacheManager? cacheManager;
@@ -198,7 +198,7 @@ class CachedFileImage extends StatelessWidget {
   /// provides support for a placeholder, showing an error and fading into the
   /// loaded image. Next to that it supports most features of a default Image
   /// widget.
-  CachedFileImage({
+  CachedQuillImage({
     Key? key,
     required this.imageUrl,
     this.imageBuilder,
@@ -225,7 +225,7 @@ class CachedFileImage extends StatelessWidget {
     this.cacheKey,
     this.maxWidthDiskCache,
     this.maxHeightDiskCache,
-  })  : _image = CachedFileImageProvider(
+  })  : _image = CachedQuillImageProvider(
           imageUrl,
           cacheKey: cacheKey,
           maxWidth: maxWidthDiskCache,

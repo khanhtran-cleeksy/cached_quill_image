@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-import 'cached_file_image_provider.dart' as image_provider;
+import 'cached_quill_image_provider.dart' as image_provider;
 import 'multi_image_stream_completer.dart';
 
 import './_image_loader.dart' show ImageLoader;
@@ -15,11 +15,11 @@ typedef ErrorListener = void Function();
 
 /// IO implementation of the CachedFileImageProvider; the ImageProvider to
 /// load network images using a cache.
-class CachedFileImageProvider
-    extends ImageProvider<image_provider.CachedFileImageProvider> {
+class CachedQuillImageProvider
+    extends ImageProvider<image_provider.CachedQuillImageProvider> {
   /// Creates an ImageProvider which loads an image from the [url], using the [scale].
   /// When the image fails to load [errorListener] is called.
-  const CachedFileImageProvider(
+  const CachedQuillImageProvider(
     this.url, {
     this.maxHeight,
     this.maxWidth,
@@ -49,15 +49,15 @@ class CachedFileImageProvider
   final int? maxWidth;
 
   @override
-  Future<CachedFileImageProvider> obtainKey(ImageConfiguration configuration) {
-    return SynchronousFuture<CachedFileImageProvider>(this);
+  Future<CachedQuillImageProvider> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture<CachedQuillImageProvider>(this);
   }
 
   @Deprecated(
       'load is deprecated, use loadBuffer instead, see https://docs.flutter.dev/release/breaking-changes/image-provider-load-buffer')
   @override
   ImageStreamCompleter load(
-      image_provider.CachedFileImageProvider key, DecoderCallback decode) {
+      image_provider.CachedQuillImageProvider key, DecoderCallback decode) {
     final chunkEvents = StreamController<ImageChunkEvent>();
     return MultiImageStreamCompleter(
       codec: _loadAsync(key, chunkEvents, decode),
@@ -76,7 +76,7 @@ class CachedFileImageProvider
   @Deprecated(
       '_loadAsync is deprecated, use loadBuffer instead, see https://docs.flutter.dev/release/breaking-changes/image-provider-load-buffer')
   Stream<ui.Codec> _loadAsync(
-    image_provider.CachedFileImageProvider key,
+    image_provider.CachedQuillImageProvider key,
     StreamController<ImageChunkEvent> chunkEvents,
     DecoderCallback decode,
   ) {
@@ -94,7 +94,7 @@ class CachedFileImageProvider
   }
 
   @override
-  ImageStreamCompleter loadBuffer(image_provider.CachedFileImageProvider key,
+  ImageStreamCompleter loadBuffer(image_provider.CachedQuillImageProvider key,
       DecoderBufferCallback decode) {
     final chunkEvents = StreamController<ImageChunkEvent>();
     return MultiImageStreamCompleter(
@@ -112,7 +112,7 @@ class CachedFileImageProvider
   }
 
   Stream<ui.Codec> _loadBufferAsync(
-    image_provider.CachedFileImageProvider key,
+    image_provider.CachedQuillImageProvider key,
     StreamController<ImageChunkEvent> chunkEvents,
     DecoderBufferCallback decode,
   ) {
@@ -131,7 +131,7 @@ class CachedFileImageProvider
 
   @override
   bool operator ==(dynamic other) {
-    if (other is CachedFileImageProvider) {
+    if (other is CachedQuillImageProvider) {
       return ((cacheKey ?? url) == (other.cacheKey ?? other.url)) &&
           scale == other.scale &&
           maxHeight == other.maxHeight &&

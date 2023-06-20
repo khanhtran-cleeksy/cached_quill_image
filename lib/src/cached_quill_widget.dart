@@ -63,7 +63,7 @@ class CachedQuillImage extends StatelessWidget {
   CachedQuillImageProvider? _image;
 
   /// Option to use cachemanager with other settings
-  final BaseCacheManager? cacheManager;
+  final CacheManager? cacheManager;
 
   /// The target image that is displayed.
   final String imageUrl;
@@ -185,13 +185,10 @@ class CachedQuillImage extends StatelessWidget {
   /// If not given a value, defaults to FilterQuality.low.
   final FilterQuality filterQuality;
 
-  /// Will resize the image and store the resized image in the disk cache.
-  final int? maxWidthDiskCache;
+  /// Whether to use resizeImage to reduce the size of the image.
+  final bool isUsingResize;
 
-  /// Will resize the image and store the resized image in the disk cache.
-  final int? maxHeightDiskCache;
-
-  /// CachedNetworkImage shows a network image using a caching mechanism. It also
+  /// [CachedQuillImage] shows a network image using a caching mechanism. It also
   /// provides support for a placeholder, showing an error and fading into the
   /// loaded image. Next to that it supports most features of a default Image
   /// widget.
@@ -219,8 +216,7 @@ class CachedQuillImage extends StatelessWidget {
     this.colorBlendMode,
     this.placeholderFadeInDuration,
     this.cacheKey,
-    this.maxWidthDiskCache,
-    this.maxHeightDiskCache,
+    this.isUsingResize = false,
   }) : super(key: key);
 
   @override
@@ -253,8 +249,8 @@ class CachedQuillImage extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (ctx, constraints) {
-        int? _constrainWidth = width?.toInt() ?? maxWidthDiskCache;
-        int? _constrainHeight = height?.toInt() ?? maxHeightDiskCache;
+        int? _constrainWidth = width?.toInt();
+        int? _constrainHeight = height?.toInt();
 
         if (_constrainWidth == null && _constrainHeight == null) {
           int? _getSize(double s) => s != double.infinity ? s.toInt() : null;
@@ -283,6 +279,7 @@ class CachedQuillImage extends StatelessWidget {
             maxHeight: _constrainHeight,
             cacheManager: cacheManager,
             headers: httpHeaders,
+            isUsingResize: isUsingResize,
           );
         }
         return OctoImage(

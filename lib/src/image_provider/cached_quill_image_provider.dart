@@ -1,6 +1,7 @@
 import 'dart:ui' as ui show Codec;
 import 'dart:async';
 import 'dart:io';
+import 'package:cached_quill_image/src/image_provider/_image_loader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,11 +29,11 @@ class CachedQuillImageProvider
     this.headers,
     this.cacheManager,
     this.cacheKey,
+    this.isUsingResize = false,
   });
 
-  /// The [BaseCacheManager] that is used to download the image from the internet.
-  /// If null the [DefaultCacheManager] instance is used.
-  final BaseCacheManager? cacheManager;
+  /// The [CacheManager] that is used to download the image from the internet.
+  final CacheManager? cacheManager;
 
   /// Url of the image to load
   final String url;
@@ -55,17 +56,63 @@ class CachedQuillImageProvider
   final int? maxWidth;
 
   /// Set headers for the image provider, for example for authentication
-  @override
   final Map<String, String>? headers;
 
+  /// Whether to use resize on the image or not
+  final bool isUsingResize;
   @override
   Future<CachedQuillImageProvider> obtainKey(ImageConfiguration configuration) {
     return SynchronousFuture<CachedQuillImageProvider>(this);
   }
 
+  @Deprecated(
+      'load is deprecated, use loadBuffer instead, see https://docs.flutter.dev/release/breaking-changes/image-provider-load-buffer')
   @override
-  ImageStreamCompleter loadBuffer(image_provider.CachedQuillImageProvider key,
-      DecoderBufferCallback decode) {
+  ImageStreamCompleter load(
+      image_provider.CachedQuillImageProvider key, DecoderCallback decode) {
+    final chunkEvents = StreamController<ImageChunkEvent>();
+    return MultiImageStreamCompleter(
+      codec: _loadAsync(key, chunkEvents, decode),
+      chunkEvents: chunkEvents.stream,
+      scale: key.scale,
+      informationCollector: () sync* {
+        yield DiagnosticsProperty<ImageProvider>(
+          'Image provider: $this \n Image key: $key',
+          this,
+          style: DiagnosticsTreeStyle.errorProperty,
+        );
+      },
+    );
+  }
+
+  @Deprecated(
+      '_loadAsync is deprecated, use loadBuffer instead, see https://docs.flutter.dev/release/breaking-changes/image-provider-load-buffer')
+  Stream<ui.Codec> _loadAsync(
+    image_provider.CachedQuillImageProvider key,
+    StreamController<ImageChunkEvent> chunkEvents,
+    DecoderCallback decode,
+  ) {
+    assert(key == this);
+    return ImageLoader().loadAsync(
+      url,
+      cacheKey,
+      chunkEvents,
+      decode,
+      maxHeight,
+      maxWidth,
+      errorListener,
+      () => PaintingBinding.instance.imageCache.evict(key),
+      cacheManager,
+      headers,
+      isUsingResize,
+    );
+  }
+
+  @override
+  ImageStreamCompleter loadBuffer(
+    image_provider.CachedQuillImageProvider key,
+    DecoderBufferCallback decode,
+  ) {
     final chunkEvents = StreamController<ImageChunkEvent>();
     return MultiImageStreamCompleter(
       codec: _loadBufferAsync(key, chunkEvents, decode),
@@ -85,84 +132,21 @@ class CachedQuillImageProvider
     image_provider.CachedQuillImageProvider key,
     StreamController<ImageChunkEvent> chunkEvents,
     DecoderBufferCallback decode,
-  ) async* {
+  ) {
     assert(key == this);
-    try {
-      var cacheManager = this.cacheManager ?? DefaultCacheManager();
-      _decode(bytes) async {
-        return decode(await ImmutableBuffer.fromUint8List(bytes));
-      }
-
-      if (isFromServer(url)) {
-        assert(
-          cacheManager is ImageCacheManager ||
-              (maxHeight == null && maxWidth == null),
-          'To resize the image with a CacheManager the '
-          'CacheManager needs to be an ImageCacheManager. maxWidth and '
-          'maxHeight will be ignored when a normal CacheManager is used.',
-        );
-
-        final stream = cacheManager is ImageCacheManager
-            ? cacheManager.getImageFile(
-                url,
-                withProgress: true,
-                key: cacheKey,
-                headers: headers,
-                maxHeight: maxHeight,
-                maxWidth: maxWidth,
-              )
-            : cacheManager.getFileStream(
-                url,
-                withProgress: true,
-                key: cacheKey,
-              );
-
-        await for (var result in stream) {
-          if (result is DownloadProgress) {
-            chunkEvents.add(ImageChunkEvent(
-              cumulativeBytesLoaded: result.downloaded,
-              expectedTotalBytes: result.totalSize,
-            ));
-          }
-          if (result is FileInfo) {
-            var file = result.file;
-            var bytes = await file.readAsBytes();
-            var decoded = await _decode(bytes);
-            yield decoded;
-          }
-        }
-      } else {
-        FileInfo? fileInfo;
-
-        fileInfo = await cacheManager.getFileFromCache(url);
-        Uint8List? bytes;
-
-        if (fileInfo == null) {
-          bytes = await File(url).readAsBytes();
-          await cacheManager.putFile(url, bytes);
-        } else {
-          bytes = await fileInfo.file.readAsBytes();
-        }
-        chunkEvents.add(ImageChunkEvent(
-          cumulativeBytesLoaded: bytes.lengthInBytes,
-          expectedTotalBytes: bytes.lengthInBytes,
-        ));
-        var decoded = await _decode(bytes);
-        yield decoded;
-      }
-    } catch (e) {
-      // Depending on where the exception was thrown, the image cache may not
-      // have had a chance to track the key in the cache at all.
-      // Schedule a microtask to give the cache a chance to add the key.
-      scheduleMicrotask(() {
-        PaintingBinding.instance.imageCache.evict(key);
-      });
-
-      errorListener?.call();
-      rethrow;
-    } finally {
-      await chunkEvents.close();
-    }
+    return ImageLoader().loadBufferAsync(
+      url,
+      cacheKey,
+      chunkEvents,
+      decode,
+      maxHeight,
+      maxWidth,
+      errorListener,
+      () => PaintingBinding.instance.imageCache.evict(key),
+      cacheManager,
+      headers,
+      isUsingResize,
+    );
   }
 
   @override

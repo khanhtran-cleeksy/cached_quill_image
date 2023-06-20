@@ -60,7 +60,7 @@ class CachedQuillImage extends StatelessWidget {
     return CachedQuillImageProvider(url, scale: scale).evict();
   }
 
-  final CachedQuillImageProvider _image;
+  CachedQuillImageProvider? _image;
 
   /// Option to use cachemanager with other settings
   final BaseCacheManager? cacheManager;
@@ -164,6 +164,9 @@ class CachedQuillImage extends StatelessWidget {
   /// scope.
   final bool matchTextDirection;
 
+  /// Optional headers to use when fetching the image.
+  final Map<String, String>? httpHeaders;
+
   /// If non-null, this color is blended with each image pixel using [colorBlendMode].
   final Color? color;
 
@@ -211,10 +214,11 @@ class CachedQuillImage extends StatelessWidget {
     this.fadeInCurve = Curves.easeIn,
     this.width,
     this.height,
-    this.fit,
+    this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
     this.repeat = ImageRepeat.noRepeat,
     this.matchTextDirection = false,
+    this.httpHeaders,
     this.cacheManager,
     this.color,
     this.filterQuality = FilterQuality.low,
@@ -225,78 +229,104 @@ class CachedQuillImage extends StatelessWidget {
     this.cacheKey,
     this.maxWidthDiskCache,
     this.maxHeightDiskCache,
-  })  : _image = CachedQuillImageProvider(
-          imageUrl,
-          cacheKey: cacheKey,
-          maxWidth: maxWidthDiskCache,
-          maxHeight: maxHeightDiskCache,
-        ),
-        super(key: key);
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    var octoPlaceholderBuilder =
-        placeholder != null ? _octoPlaceholderBuilder : null;
-    var octoProgressIndicatorBuilder =
-        progressIndicatorBuilder != null ? _octoProgressIndicatorBuilder : null;
+    var _plBuilder = placeholder != null
+        ? (context) => placeholder!.call(context, imageUrl)
+        : null;
 
-    ///If there is no placeholer OctoImage does not fade, so always set an
-    ///(empty) placeholder as this always used to be the behaviour of
-    ///CachedNetworkImage.
-    if (octoPlaceholderBuilder == null &&
-        octoProgressIndicatorBuilder == null) {
-      octoPlaceholderBuilder = (context) => Container();
+    var _pIBuilder = progressIndicatorBuilder != null
+        ? (BuildContext context, ImageChunkEvent? progress) {
+            int? totalSize;
+            var downloaded = 0;
+            if (progress != null) {
+              totalSize = progress.expectedTotalBytes;
+              downloaded = progress.cumulativeBytesLoaded;
+            }
+            return progressIndicatorBuilder!.call(
+              context,
+              imageUrl,
+              DownloadProgress(imageUrl, totalSize, downloaded),
+            );
+          }
+        : null;
+
+    /// If there is no placeholer OctoImage does not fade, so always set an
+    /// (empty) placeholder as this always used to be the behaviour of
+    /// [CachedQuillImage].
+    if (_plBuilder == null && _pIBuilder == null) {
+      _plBuilder = (context) => Container();
     }
+    return LayoutBuilder(builder: (ctx, constraints) {
+      int? _constrainWidth = width?.toInt() ?? maxWidthDiskCache;
+      int? _constrainHeight = height?.toInt() ?? maxHeightDiskCache;
 
-    return OctoImage(
-      image: _image,
-      imageBuilder: imageBuilder != null ? _octoImageBuilder : null,
-      placeholderBuilder: octoPlaceholderBuilder,
-      progressIndicatorBuilder: octoProgressIndicatorBuilder,
-      errorBuilder: errorWidget != null ? _octoErrorBuilder : null,
-      fadeOutDuration: fadeOutDuration,
-      fadeOutCurve: fadeOutCurve,
-      fadeInDuration: fadeInDuration,
-      fadeInCurve: fadeInCurve,
-      width: width,
-      height: height,
-      fit: fit,
-      alignment: alignment,
-      repeat: repeat,
-      matchTextDirection: matchTextDirection,
-      color: color,
-      filterQuality: filterQuality,
-      colorBlendMode: colorBlendMode,
-      placeholderFadeInDuration: placeholderFadeInDuration,
-      gaplessPlayback: true,
-      memCacheWidth: memCacheWidth,
-      memCacheHeight: memCacheHeight,
-    );
+      if (_constrainWidth == null && _constrainHeight == null) {
+        _constrainWidth = constraints.maxWidth != double.infinity
+            ? constraints.maxWidth.toInt()
+            : null;
+        _constrainHeight = constraints.maxHeight != double.infinity
+            ? constraints.maxHeight.toInt()
+            : null;
+      }
+
+      // Ratio is needed to scale the width and height to the pixel ratio of the
+      // device. This is needed because the image is cached in the pixel ratio
+      final ratio = MediaQuery.of(context).devicePixelRatio;
+      //
+      int? _scaleSize(int? s) => s != null ? (s * ratio).toInt() : null;
+      // Scale the width and height to the pixel ratio of the device
+      _constrainWidth = _scaleSize(_constrainWidth);
+      _constrainHeight = _scaleSize(_constrainHeight);
+
+      // By default _image is null, so if the image is not cached it will be
+      // null. If the image is cached it will be an CachedQuillImageProvider
+      if (_image == null ||
+          _image?.maxHeight != _constrainHeight ||
+          _image?.maxWidth != _constrainHeight) {
+        _image = CachedQuillImageProvider(
+          imageUrl,
+          cacheKey: cacheKey,
+          maxWidth: _constrainWidth,
+          maxHeight: _constrainHeight,
+          cacheManager: cacheManager,
+          headers: httpHeaders,
+        );
+      }
+      return OctoImage(
+        image: _image!,
+        imageBuilder: imageBuilder != null ? _imageBuilder : null,
+        placeholderBuilder: _plBuilder,
+        progressIndicatorBuilder: _pIBuilder,
+        errorBuilder: errorWidget != null ? _errorBuilder : null,
+        fadeOutDuration: fadeOutDuration,
+        fadeOutCurve: fadeOutCurve,
+        fadeInDuration: fadeInDuration,
+        fadeInCurve: fadeInCurve,
+        width: width,
+        height: height,
+        fit: fit,
+        alignment: alignment,
+        repeat: repeat,
+        matchTextDirection: matchTextDirection,
+        color: color,
+        filterQuality: filterQuality,
+        colorBlendMode: colorBlendMode,
+        placeholderFadeInDuration: placeholderFadeInDuration,
+        gaplessPlayback: true,
+        memCacheWidth: memCacheWidth,
+        memCacheHeight: memCacheHeight,
+      );
+    });
   }
 
-  Widget _octoImageBuilder(BuildContext context, Widget child) {
-    return imageBuilder!(context, _image);
+  Widget _imageBuilder(BuildContext context, Widget child) {
+    return imageBuilder!(context, _image!);
   }
 
-  Widget _octoPlaceholderBuilder(BuildContext context) {
-    return placeholder!(context, imageUrl);
-  }
-
-  Widget _octoProgressIndicatorBuilder(
-    BuildContext context,
-    ImageChunkEvent? progress,
-  ) {
-    int? totalSize;
-    var downloaded = 0;
-    if (progress != null) {
-      totalSize = progress.expectedTotalBytes;
-      downloaded = progress.cumulativeBytesLoaded;
-    }
-    return progressIndicatorBuilder!(
-        context, imageUrl, DownloadProgress(imageUrl, totalSize, downloaded));
-  }
-
-  Widget _octoErrorBuilder(
+  Widget _errorBuilder(
     BuildContext context,
     Object error,
     StackTrace? stackTrace,

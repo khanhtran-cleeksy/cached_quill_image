@@ -185,12 +185,6 @@ class CachedQuillImage extends StatelessWidget {
   /// If not given a value, defaults to FilterQuality.low.
   final FilterQuality filterQuality;
 
-  /// Will resize the image in memory to have a certain width using [ResizeImage]
-  final int? memCacheWidth;
-
-  /// Will resize the image in memory to have a certain height using [ResizeImage]
-  final int? memCacheHeight;
-
   /// Will resize the image and store the resized image in the disk cache.
   final int? maxWidthDiskCache;
 
@@ -224,8 +218,6 @@ class CachedQuillImage extends StatelessWidget {
     this.filterQuality = FilterQuality.low,
     this.colorBlendMode,
     this.placeholderFadeInDuration,
-    this.memCacheWidth,
-    this.memCacheHeight,
     this.cacheKey,
     this.maxWidthDiskCache,
     this.maxHeightDiskCache,
@@ -259,67 +251,64 @@ class CachedQuillImage extends StatelessWidget {
     if (_plBuilder == null && _pIBuilder == null) {
       _plBuilder = (context) => Container();
     }
-    return LayoutBuilder(builder: (ctx, constraints) {
-      int? _constrainWidth = width?.toInt() ?? maxWidthDiskCache;
-      int? _constrainHeight = height?.toInt() ?? maxHeightDiskCache;
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        int? _constrainWidth = width?.toInt() ?? maxWidthDiskCache;
+        int? _constrainHeight = height?.toInt() ?? maxHeightDiskCache;
 
-      if (_constrainWidth == null && _constrainHeight == null) {
-        _constrainWidth = constraints.maxWidth != double.infinity
-            ? constraints.maxWidth.toInt()
-            : null;
-        _constrainHeight = constraints.maxHeight != double.infinity
-            ? constraints.maxHeight.toInt()
-            : null;
-      }
+        if (_constrainWidth == null && _constrainHeight == null) {
+          int? _getSize(double s) => s != double.infinity ? s.toInt() : null;
+          _constrainWidth = _getSize(constraints.maxWidth);
+          _constrainHeight = _getSize(constraints.maxHeight);
+        }
 
-      // Ratio is needed to scale the width and height to the pixel ratio of the
-      // device. This is needed because the image is cached in the pixel ratio
-      final ratio = MediaQuery.of(context).devicePixelRatio;
-      //
-      int? _scaleSize(int? s) => s != null ? (s * ratio).toInt() : null;
-      // Scale the width and height to the pixel ratio of the device
-      _constrainWidth = _scaleSize(_constrainWidth);
-      _constrainHeight = _scaleSize(_constrainHeight);
+        // Ratio is needed to scale the width and height to the pixel ratio of the
+        // device. This is needed because the image is cached in the pixel ratio
+        final ratio = MediaQuery.of(context).devicePixelRatio;
+        //
+        int? _scaleSize(int? s) => s != null ? (s * ratio).toInt() : null;
+        // Scale the width and height to the pixel ratio of the device
+        _constrainWidth = _scaleSize(_constrainWidth);
+        _constrainHeight = _scaleSize(_constrainHeight);
 
-      // By default _image is null, so if the image is not cached it will be
-      // null. If the image is cached it will be an CachedQuillImageProvider
-      if (_image == null ||
-          _image?.maxHeight != _constrainHeight ||
-          _image?.maxWidth != _constrainHeight) {
-        _image = CachedQuillImageProvider(
-          imageUrl,
-          cacheKey: cacheKey,
-          maxWidth: _constrainWidth,
-          maxHeight: _constrainHeight,
-          cacheManager: cacheManager,
-          headers: httpHeaders,
+        // By default _image is null, so if the image is not cached it will be
+        // null. If the image is cached it will be an CachedQuillImageProvider
+        if (_image == null ||
+            _image?.maxHeight != _constrainHeight ||
+            _image?.maxWidth != _constrainHeight) {
+          _image = CachedQuillImageProvider(
+            imageUrl,
+            cacheKey: cacheKey,
+            maxWidth: _constrainWidth,
+            maxHeight: _constrainHeight,
+            cacheManager: cacheManager,
+            headers: httpHeaders,
+          );
+        }
+        return OctoImage(
+          image: _image!,
+          imageBuilder: imageBuilder != null ? _imageBuilder : null,
+          placeholderBuilder: _plBuilder,
+          progressIndicatorBuilder: _pIBuilder,
+          errorBuilder: errorWidget != null ? _errorBuilder : null,
+          fadeOutDuration: fadeOutDuration,
+          fadeOutCurve: fadeOutCurve,
+          fadeInDuration: fadeInDuration,
+          fadeInCurve: fadeInCurve,
+          width: width,
+          height: height,
+          fit: fit,
+          alignment: alignment,
+          repeat: repeat,
+          matchTextDirection: matchTextDirection,
+          color: color,
+          filterQuality: filterQuality,
+          colorBlendMode: colorBlendMode,
+          placeholderFadeInDuration: placeholderFadeInDuration,
+          gaplessPlayback: true,
         );
-      }
-      return OctoImage(
-        image: _image!,
-        imageBuilder: imageBuilder != null ? _imageBuilder : null,
-        placeholderBuilder: _plBuilder,
-        progressIndicatorBuilder: _pIBuilder,
-        errorBuilder: errorWidget != null ? _errorBuilder : null,
-        fadeOutDuration: fadeOutDuration,
-        fadeOutCurve: fadeOutCurve,
-        fadeInDuration: fadeInDuration,
-        fadeInCurve: fadeInCurve,
-        width: width,
-        height: height,
-        fit: fit,
-        alignment: alignment,
-        repeat: repeat,
-        matchTextDirection: matchTextDirection,
-        color: color,
-        filterQuality: filterQuality,
-        colorBlendMode: colorBlendMode,
-        placeholderFadeInDuration: placeholderFadeInDuration,
-        gaplessPlayback: true,
-        memCacheWidth: memCacheWidth,
-        memCacheHeight: memCacheHeight,
-      );
-    });
+      },
+    );
   }
 
   Widget _imageBuilder(BuildContext context, Widget child) {

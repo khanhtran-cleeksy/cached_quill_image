@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:cached_quill_image/src/image_provider/_image_loader.dart';
 import 'package:flutter/material.dart';
 
 /// ImageLoader class to load images differently on various platforms.
@@ -12,7 +13,7 @@ class ImageLoader {
     String url,
     String? cacheKey,
     StreamController<ImageChunkEvent> chunkEvents,
-    DecoderCallback decode,
+    FileDecoderCallback decode,
     int? maxHeight,
     int? maxWidth,
     Function()? errorListener,

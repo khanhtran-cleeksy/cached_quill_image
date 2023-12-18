@@ -8,7 +8,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'cached_quill_image_provider.dart' as image_provider;
 import 'multi_image_stream_completer.dart';
 
-import './_image_loader.dart' show ImageLoader;
+import './_image_loader.dart' show FileDecoderCallback, ImageLoader;
 
 /// Function which is called after loading the image failed.
 typedef ErrorListener = void Function();
@@ -57,7 +57,7 @@ class CachedQuillImageProvider
       'load is deprecated, use loadBuffer instead, see https://docs.flutter.dev/release/breaking-changes/image-provider-load-buffer')
   @override
   ImageStreamCompleter load(
-      image_provider.CachedQuillImageProvider key, DecoderCallback decode) {
+      image_provider.CachedQuillImageProvider key, FileDecoderCallback decode) {
     final chunkEvents = StreamController<ImageChunkEvent>();
     return MultiImageStreamCompleter(
       codec: _loadAsync(key, chunkEvents, decode),
@@ -78,7 +78,7 @@ class CachedQuillImageProvider
   Stream<ui.Codec> _loadAsync(
     image_provider.CachedQuillImageProvider key,
     StreamController<ImageChunkEvent> chunkEvents,
-    DecoderCallback decode,
+    FileDecoderCallback decode,
   ) {
     assert(key == this);
     return ImageLoader().loadAsync(
